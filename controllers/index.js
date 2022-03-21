@@ -1,14 +1,21 @@
 const s3Service = require('../services/aws');
 
-const home = async (req, res, next) => {
+const listBuckets = async (req, res, next) => {
   try {
+    const response = [];
     const buckets = await s3Service.listBuckets();
 
-    buckets.forEach((bucket) => {
-      bucket.CreationDate = bucket.CreationDate.toLocaleDateString();
-    });
+    for await (const bucket of buckets) {
+      const accessType = await s3Service.getBucketAclPolicy(bucket.Name);
 
-    res.status(200).json(buckets);
+      response.push({
+        name: bucket.Name,
+        accessType,
+        creationDate: bucket.CreationDate.toLocaleDateString(),
+      });
+    }
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -25,7 +32,20 @@ const createBucket = async (req, res, next) => {
   }
 };
 
+const listObjects = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+
+    const bucketObjects = await s3Service.listObjects(bucketName);
+    console.log(bucketObjects);
+    res.status(200).json(bucketObjects);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  home,
+  listBuckets,
   createBucket,
+  listObjects,
 };

@@ -1,13 +1,12 @@
-require('dotenv').config();
-
-const S3 = require('aws-sdk');
 const fs = require('fs');
+const S3 = require('aws-sdk');
+const s3Config = require('../config/config').s3;
 
 // configuro las credenciales del bucket en aws s3
 const storage = new S3.S3({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
+  region: s3Config.region,
+  accessKeyId: s3Config.accessKey,
+  secretAccessKey: s3Config.secretKey,
 });
 
 const listBuckets = async () => {
@@ -30,6 +29,36 @@ const createBucket = async (bucketToCreate) => {
     const newBucket = await storage.createBucket(options).promise();
 
     return newBucket;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const listObjects = async (bucketName) => {
+  try {
+    const data = await storage.listObjectsV2({ Bucket: bucketName }).promise();
+
+    return data;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getBucketAclPolicy = async (bucketName) => {
+  try {
+    const aclPolicy = await storage.getBucketAcl({ Bucket: bucketName }).promise();
+    let allUsersPolicy = 'privado';
+    const publicConditions = ['READ_ACP', 'READ'];
+
+    aclPolicy.Grants.forEach((grant) => {
+      if (grant.Grantee.URI && grant.Grantee.URI.includes('AllUsers')) {
+        if (publicConditions.some((e) => grant.Permission.includes(e))) {
+          allUsersPolicy = 'público';
+        }
+      }
+    });
+
+    return allUsersPolicy;
   } catch (err) {
     throw new Error(err);
   }
@@ -72,7 +101,9 @@ const uploadToBucket = async (filePath) => {
 
 module.exports = {
   listBuckets,
+  createBucket,
+  listObjects,
+  getBucketAclPolicy,
   getXml,
   uploadToBucket,
-  createBucket,
 };
