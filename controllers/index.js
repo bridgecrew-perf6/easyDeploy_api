@@ -37,8 +37,18 @@ const listObjects = async (req, res, next) => {
     const { bucketName } = req.params;
 
     const bucketObjects = await s3Service.listObjects(bucketName);
-    console.log(bucketObjects);
     res.status(200).json(bucketObjects);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createPolicy = async (req, res, next) => {
+  try {
+    const { name, access } = req.body;
+
+    const result = await s3Service.editBucketPolicy(name, access);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }
@@ -47,5 +57,6 @@ const listObjects = async (req, res, next) => {
 module.exports = {
   listBuckets,
   createBucket,
+  createPolicy,
   listObjects,
 };

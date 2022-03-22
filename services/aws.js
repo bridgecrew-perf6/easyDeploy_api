@@ -1,9 +1,9 @@
 const fs = require('fs');
-const S3 = require('aws-sdk');
+const aws = require('aws-sdk');
 const s3Config = require('../config/config').s3;
 
 // configuro las credenciales del bucket en aws s3
-const storage = new S3.S3({
+const s3 = new aws.S3({
   region: s3Config.region,
   accessKeyId: s3Config.accessKey,
   secretAccessKey: s3Config.secretKey,
@@ -11,7 +11,7 @@ const storage = new S3.S3({
 
 const listBuckets = async () => {
   try {
-    const data = await storage.listBuckets({}).promise();
+    const data = await s3.listBuckets({}).promise();
 
     return data.Buckets;
   } catch (err) {
@@ -26,7 +26,7 @@ const createBucket = async (bucketToCreate) => {
       ACL: bucketToCreate.access,
     };
 
-    const newBucket = await storage.createBucket(options).promise();
+    const newBucket = await s3.createBucket(options).promise();
 
     return newBucket;
   } catch (err) {
@@ -36,7 +36,9 @@ const createBucket = async (bucketToCreate) => {
 
 const listObjects = async (bucketName) => {
   try {
-    const data = await storage.listObjectsV2({ Bucket: bucketName }).promise();
+    const data = await s3.listObjectsV2({
+      Bucket: bucketName,
+    }).promise();
 
     return data;
   } catch (err) {
@@ -44,9 +46,37 @@ const listObjects = async (bucketName) => {
   }
 };
 
+const editBucketPolicy = async (bucketName, access) => {
+  try {
+    const readOnlyAnonUserPolicy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: 'AddPerm',
+          Effect: access ? 'Allow' : 'Deny',
+          Principal: '*',
+          Action: [
+            's3:GetObject',
+          ],
+          Resource: [
+            `arn:aws:s3:::${bucketName}/*`,
+          ],
+        },
+      ],
+    };
+
+    const options = { Bucket: bucketName, Policy: JSON.stringify(readOnlyAnonUserPolicy) };
+    const result = await s3.putBucketPolicy(options).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
 const getBucketAclPolicy = async (bucketName) => {
   try {
-    const aclPolicy = await storage.getBucketAcl({ Bucket: bucketName }).promise();
+    const aclPolicy = await s3.getBucketAcl({ Bucket: bucketName }).promise();
     let allUsersPolicy = 'privado';
     const publicConditions = ['READ_ACP', 'READ'];
 
@@ -71,7 +101,7 @@ const getXml = async () => {
       Key: 'modelos.xml',
     };
 
-    const data = await storage.getObject(params).promise();
+    const data = await s3.getObject(params).promise();
 
     return data.Body.toString('utf-8');
   } catch (err) {
@@ -93,7 +123,7 @@ const uploadToBucket = async (filePath) => {
       ContentDisposition: 'inline',
     };
 
-    return storage.upload(params).promise();
+    return s3.upload(params).promise();
   } catch (err) {
     return err;
   }
@@ -103,6 +133,7 @@ module.exports = {
   listBuckets,
   createBucket,
   listObjects,
+  editBucketPolicy,
   getBucketAclPolicy,
   getXml,
   uploadToBucket,

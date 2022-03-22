@@ -5,5 +5,6 @@ router.get('/', controller.listBuckets);
 router.post('/', controller.createBucket);
 
 router.get('/:bucketName', controller.listObjects);
+router.post('/policy', controller.createPolicy);
 
 module.exports = router;
