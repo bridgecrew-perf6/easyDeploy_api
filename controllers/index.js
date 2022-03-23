@@ -6,7 +6,7 @@ const listBuckets = async (req, res, next) => {
     const buckets = await s3Service.listBuckets();
 
     for await (const bucket of buckets) {
-      const accessType = await s3Service.getBucketAclPolicy(bucket.Name);
+      const accessType = await s3Service.getBucketAccess(bucket.Name);
 
       response.push({
         name: bucket.Name,
