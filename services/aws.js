@@ -60,6 +60,8 @@ const getObject = async (bucketName) => {
   }
 };
 
+// PUBLIC ACCESS BLOCK METHODS
+
 const getPublicAccessBlock = async (bucketName) => {
   const status = {
     isEnable: false,
@@ -80,6 +82,29 @@ const getPublicAccessBlock = async (bucketName) => {
   }
 };
 
+const editPublicAccessBlock = async (bucketName, enable) => {
+  const publicAccessConfig = {
+    Bucket: bucketName,
+    PublicAccessBlockConfiguration: {
+      BlockPublicAcls: enable,
+      BlockPublicPolicy: enable,
+      IgnorePublicAcls: enable,
+      RestrictPublicBuckets: enable,
+    },
+  };
+
+  try {
+    const result = await s3.putPublicAccessBlock(publicAccessConfig).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+/* -------------------------------------------------------------------------------- */
+
+// BUCKET POLICY METHODS
+
 const getBucketPolicy = async (bucketName) => {
   let isPublicPolicy = false;
 
@@ -93,6 +118,47 @@ const getBucketPolicy = async (bucketName) => {
   }
 };
 
+const editBucketPolicy = async (bucketName, access) => {
+  try {
+    const readOnlyAnonUserPolicy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: 'AddPerm',
+          Effect: access ? 'Allow' : 'Deny',
+          Principal: '*',
+          Action: [
+            's3:GetObject',
+          ],
+          Resource: [
+            `arn:aws:s3:::${bucketName}/*`,
+          ],
+        },
+      ],
+    };
+
+    const options = { Bucket: bucketName, Policy: JSON.stringify(readOnlyAnonUserPolicy) };
+    const result = await s3.putBucketPolicy(options).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const deleteBucketPolicy = async (bucketName) => {
+  try {
+    const result = await s3.deleteBucketPolicy({ Bucket: bucketName }).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+/* -------------------------------------------------------------------------------- */
+
+// BUCKET ACL METHODS
 const getAclPolicy = async (bucketName) => {
   let isPublicAcl = false;
 
@@ -114,6 +180,25 @@ const getAclPolicy = async (bucketName) => {
     return isPublicAcl;
   }
 };
+
+const serializeBucketAcl = async (bucketName) => {
+  try {
+    const options = {
+      Bucket: bucketName,
+      GrantFullControl: 'id=f4810a3c8e4459998eff93c114b11eade9969f77741b7b678c26b4e0fbab14e5',
+      GrantWrite: 'uri=http://acs.amazonaws.com/groups/s3/LogDelivery',
+      GrantRead: 'uri=http://acs.amazonaws.com/groups/s3/LogDelivery',
+    };
+
+    const result = await s3.putBucketAcl(options).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+/* -------------------------------------------------------------------------------- */
 
 const getBucketAccess = async (bucketName) => {
   try {
@@ -150,29 +235,37 @@ const getBucketAccess = async (bucketName) => {
   }
 };
 
-const editBucketPolicy = async (bucketName, access) => {
+const editBucket = async (bucketName, access) => {
+  await serializeBucketAcl(bucketName);
+
   try {
-    const readOnlyAnonUserPolicy = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Sid: 'AddPerm',
-          Effect: access ? 'Allow' : 'Deny',
-          Principal: '*',
-          Action: [
-            's3:GetObject',
-          ],
-          Resource: [
-            `arn:aws:s3:::${bucketName}/*`,
-          ],
-        },
-      ],
+    const bucketInfo = {
+      name: bucketName,
+      access,
     };
 
-    const options = { Bucket: bucketName, Policy: JSON.stringify(readOnlyAnonUserPolicy) };
-    const result = await s3.putBucketPolicy(options).promise();
+    switch (access) {
+      case 0:
+        await editPublicAccessBlock(bucketName, false);
+        await editBucketPolicy(bucketName, true);
 
-    return result;
+        break;
+      case 1:
+        await editPublicAccessBlock(bucketName, true);
+        await editBucketPolicy(bucketName, false);
+
+        break;
+      case 2:
+        await deleteBucketPolicy(bucketName);
+        await editPublicAccessBlock(bucketName, false);
+
+        break;
+
+      default:
+        break;
+    }
+
+    return bucketInfo;
   } catch (err) {
     throw new Error(err);
   }
@@ -199,14 +292,22 @@ const uploadToBucket = async (filePath) => {
 };
 
 module.exports = {
+  // BUCKETS METHODS
   listBuckets,
-  createBucket,
   listObjects,
+  createBucket,
   getObject,
-  getBucketPolicy,
-  getAclPolicy,
-  getPublicAccessBlock,
   getBucketAccess,
-  editBucketPolicy,
+  editBucket,
   uploadToBucket,
+  // POLICY METHODS
+  getBucketPolicy,
+  editBucketPolicy,
+  deleteBucketPolicy,
+  // ACL METHODS
+  getAclPolicy,
+  serializeBucketAcl,
+  // PUBLIC ACCESS MEHODS
+  getPublicAccessBlock,
+  editPublicAccessBlock,
 };

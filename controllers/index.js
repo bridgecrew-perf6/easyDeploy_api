@@ -24,9 +24,9 @@ const listBuckets = async (req, res, next) => {
 const createBucket = async (req, res, next) => {
   try {
     const bucketInformation = req.body;
-    const createdBucket = await s3Service.createBucket(bucketInformation);
+    // const createdBucket = await s3Service.createBucket(bucketInformation);
 
-    res.status(201).json(createdBucket);
+    res.status(201).json({ message: 'success' });
   } catch (err) {
     next(err);
   }
@@ -43,12 +43,20 @@ const listObjects = async (req, res, next) => {
   }
 };
 
-const createPolicy = async (req, res, next) => {
+const editBucket = async (req, res, next) => {
   try {
     const { name, access } = req.body;
 
-    const result = await s3Service.editBucketPolicy(name, access);
+    const result = await s3Service.editBucket(name, access);
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const uploadBucket = async (req, res, next) => {
+  try {
+    res.status(200).json({ message: 'exmple' });
   } catch (err) {
     next(err);
   }
@@ -57,6 +65,7 @@ const createPolicy = async (req, res, next) => {
 module.exports = {
   listBuckets,
   createBucket,
-  createPolicy,
+  editBucket,
   listObjects,
+  uploadBucket,
 };
