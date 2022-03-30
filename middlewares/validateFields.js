@@ -2,11 +2,11 @@ const { validationResult } = require('express-validator');
 
 const validateFields = (req, res, next) => {
   const errors = validationResult(req);
-  if (errors.isEmpty()) {
-    next();
+  if (!errors.isEmpty()) {
+    return res.status(400).json(errors);
   }
 
-  res.status(404).json(errors);
+  return next();
 };
 
 module.exports = validateFields;

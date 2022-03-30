@@ -1,4 +1,3 @@
-const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
@@ -20,16 +19,17 @@ app.use('/', indexRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-  next(createError(404));
+  const err = new Error('recurso no encontrado');
+  err.status = 404;
+  next(err);
 });
 
 // error handler
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   const errorResponse = {
-    message: err.message,
-    error: req.app.get('env') === 'development' ? err : {},
+    status: err.status || 500,
+    message: err.message || 'internal server error',
   };
-
   // send the error
   res.status(err.status || 500).json(errorResponse);
 });

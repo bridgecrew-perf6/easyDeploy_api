@@ -2,63 +2,11 @@ const fs = require('fs');
 const aws = require('aws-sdk');
 const s3Config = require('../config/config').s3;
 
-// configuro las credenciales del bucket en aws s3
 const s3 = new aws.S3({
   region: s3Config.region,
   accessKeyId: s3Config.accessKey,
   secretAccessKey: s3Config.secretKey,
 });
-
-const listBuckets = async () => {
-  try {
-    const data = await s3.listBuckets({}).promise();
-
-    return data.Buckets;
-  } catch (err) {
-    throw new Error(err);
-  }
-};
-
-const createBucket = async (bucketToCreate) => {
-  try {
-    const options = {
-      Bucket: bucketToCreate.name,
-      ACL: bucketToCreate.access,
-    };
-
-    const newBucket = await s3.createBucket(options).promise();
-
-    return newBucket;
-  } catch (err) {
-    throw new Error(err);
-  }
-};
-
-const listObjects = async (bucketName) => {
-  try {
-    const data = await s3.listObjectsV2({
-      Bucket: bucketName,
-    }).promise();
-
-    return data;
-  } catch (err) {
-    throw new Error(err);
-  }
-};
-
-const getObject = async (bucketName) => {
-  try {
-    const params = {
-      Bucket: bucketName,
-    };
-
-    const data = await s3.getObject(params).promise();
-
-    return data.Body.toString('utf-8');
-  } catch (err) {
-    throw new Error(err);
-  }
-};
 
 // PUBLIC ACCESS BLOCK METHODS
 
@@ -197,8 +145,118 @@ const serializeBucketAcl = async (bucketName) => {
     throw new Error(err);
   }
 };
+/* -------------------------------------------------------------------------------- */
+
+// OBJECTS METHODS
+
+const listObjects = async (bucketName) => {
+  try {
+    const data = await s3.listObjectsV2({
+      Bucket: bucketName,
+    }).promise();
+
+    return data;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getObject = async (bucketName) => {
+  try {
+    const params = {
+      Bucket: bucketName,
+    };
+
+    const data = await s3.getObject(params).promise();
+
+    return data.Body.toString('utf-8');
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const deleteObjects = async (Bucket) => {
+  try {
+    const objectsToDelete = [];
+    const allObjets = await listObjects(Bucket);
+
+    allObjets.Contents.forEach((object) => {
+      objectsToDelete.push({
+        Key: object.Key,
+      });
+    });
+
+    const options = {
+      Bucket,
+      Delete: {
+        Objects: objectsToDelete,
+        Quiet: false,
+      },
+    };
+
+    const result = await s3.deleteObjects(options).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 
 /* -------------------------------------------------------------------------------- */
+
+// BUCKET METHODS
+
+const listBuckets = async () => {
+  try {
+    const data = await s3.listBuckets({}).promise();
+
+    return data.Buckets;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const bucketExists = async (Bucket) => {
+  try {
+    await s3.headBucket({ Bucket }).promise();
+
+    return true;
+  } catch (err) {
+    if (err.statusCode === 404 || err.statusCode === 403) {
+      return false;
+    }
+
+    throw new Error(err);
+  }
+};
+
+const createBucket = async (bucketToCreate) => {
+  try {
+    const exists = await bucketExists(bucketToCreate.name);
+
+    if (exists) {
+      const error = new Error('el bucket ya existe');
+      error.status = 400;
+      throw error;
+    }
+
+    const options = {
+      Bucket: bucketToCreate.name,
+    };
+
+    const newBucket = await s3.createBucket(options).promise();
+
+    return newBucket;
+  } catch (err) {
+    if (err.statusCode === 409) {
+      const error = new Error('bucket name already exist');
+      error.status = 400;
+      throw error;
+    }
+
+    throw err;
+  }
+};
 
 const getBucketAccess = async (bucketName) => {
   try {
@@ -291,15 +349,32 @@ const uploadToBucket = async (filePath) => {
   }
 };
 
+const deleteBucket = async (Bucket) => {
+  try {
+    await deleteObjects(Bucket);
+    const result = await s3.deleteBucket({ Bucket }).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+/* -------------------------------------------------------------------------------- */
+
 module.exports = {
   // BUCKETS METHODS
   listBuckets,
-  listObjects,
-  createBucket,
-  getObject,
   getBucketAccess,
+  createBucket,
   editBucket,
   uploadToBucket,
+  deleteBucket,
+  bucketExists,
+  // OBJECTS METHODS
+  listObjects,
+  getObject,
+  deleteObjects,
   // POLICY METHODS
   getBucketPolicy,
   editBucketPolicy,

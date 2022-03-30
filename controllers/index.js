@@ -24,9 +24,9 @@ const listBuckets = async (req, res, next) => {
 const createBucket = async (req, res, next) => {
   try {
     const bucketInformation = req.body;
-    // const createdBucket = await s3Service.createBucket(bucketInformation);
+    const createdBucket = await s3Service.createBucket(bucketInformation);
 
-    res.status(201).json({ message: 'success' });
+    res.status(201).json(createdBucket);
   } catch (err) {
     next(err);
   }
@@ -62,10 +62,22 @@ const uploadBucket = async (req, res, next) => {
   }
 };
 
+const deleteBucket = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+    const result = await s3Service.deleteBucket(bucketName);
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   listBuckets,
   createBucket,
   editBucket,
   listObjects,
   uploadBucket,
+  deleteBucket,
 };

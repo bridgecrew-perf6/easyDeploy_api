@@ -3,17 +3,22 @@ const validateFields = require('./validateFields');
 const utils = require('../utils/customValidations');
 
 const validateCreation = [
-  check('name', 'required').notEmpty().bail(),
-  check('name', 'bad format').isString().bail()
-    .isLength({ min: 3, max: 63 })
+  check('name', 'formato erroneo')
+    .notEmpty()
+    .bail()
+    .isString()
     .bail()
     .custom((value) => {
+      if (value.length < 3 || value.length > 63) {
+        throw new Error('Los nombres deben tener entre 3 y 63 caracteres.');
+      }
+
       if (utils.isValidIP(value)) {
-        throw new Error('Los nombres no deben tener el formato de una dirección IP');
+        throw new Error('Los nombres no deben tener el formato de una dirección IP.');
       }
 
       if (value.startsWith('xn--', 0)) {
-        throw new Error('Los nombres no deben comenzar con el prefijo xn--');
+        throw new Error('Los nombres no deben comenzar con el prefijo xn--.');
       }
 
       if (value.substring(value.search('-s3alias'), value.length) === '-s3alias') {
@@ -31,7 +36,8 @@ const validateCreation = [
       return true;
     })
     .bail(),
-  check('access', 'bad format').isInt({ min: 0, max: 2 }),
+  check('access', 'formato erroneo').notEmpty().bail()
+    .isInt({ min: 0, max: 2 }),
 
   validateFields,
 ];

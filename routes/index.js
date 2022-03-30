@@ -7,6 +7,7 @@ router.post('/', validator.validateCreation, controller.createBucket);
 
 router.get('/:bucketName', controller.listObjects);
 router.post('/:bucketName', controller.uploadBucket);
-router.put('/:bucketName', controller.editBucket);
+router.put('/:bucketName', validator.validateCreation, controller.editBucket);
+router.delete('/:bucketName', controller.deleteBucket);
 
 module.exports = router;
