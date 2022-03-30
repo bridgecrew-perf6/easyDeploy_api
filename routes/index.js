@@ -1,13 +1,17 @@
 const router = require('express').Router();
 const controller = require('../controllers/index');
-const validator = require('../middlewares/checkBucket');
+const bucketValidator = require('../middlewares/bucketValidator');
 
-router.get('/', controller.listBuckets);
-router.post('/', validator.validateCreation, controller.createBucket);
+router.route('/')
+  .get(controller.listBuckets)
+  .post(bucketValidator.info, controller.createBucket);
 
-router.get('/:bucketName', controller.listObjects);
-router.post('/:bucketName', controller.uploadBucket);
-router.put('/:bucketName', validator.validateCreation, controller.editBucket);
-router.delete('/:bucketName', controller.deleteBucket);
+router.get('/regions', controller.listRegions);
+
+router.route('/:bucketName', bucketValidator.exist)
+  .get(controller.listObjects)
+  .post(controller.uploadBucket)
+  .put(bucketValidator.info, controller.editBucket)
+  .delete(controller.deleteBucket);
 
 module.exports = router;

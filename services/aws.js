@@ -206,11 +206,122 @@ const deleteObjects = async (Bucket) => {
 
 // BUCKET METHODS
 
+const listRegions = async () => {
+  const data = [
+    {
+      name: 'US East (Ohio)',
+      id: 'us-east-2',
+    },
+    {
+      name: 'US East (N. Virginia)',
+      id: 'us-east-1',
+    },
+    {
+      name: 'US West (N. California)',
+      id: 'us-west-1',
+    },
+    {
+      name: 'US West (Oregon)',
+      id: 'us-west-2',
+    },
+    {
+      name: 'Africa (Cape Town)',
+      id: 'af-south-1',
+    },
+    {
+      name: 'Asia Pacific (Hong Kong)',
+      id: 'ap-east-1',
+    },
+    {
+      name: 'Asia Pacific (Jakarta)',
+      id: 'ap-southeast-3',
+    },
+    {
+      name: 'Asia Pacific (Mumbai)',
+      id: 'ap-south-1',
+    },
+    {
+      name: 'Asia Pacific (Osaka)',
+      id: 'ap-northeast-3',
+    },
+    {
+      name: 'Asia Pacific (Seoul)',
+      id: 'ap-northeast-2',
+    },
+    {
+      name: 'Asia Pacific (Singapore)',
+      id: 'ap-southeast-1',
+    },
+    {
+      name: 'Asia Pacific (Sydney)',
+      id: 'ap-southeast-2',
+    },
+    {
+      name: 'Asia Pacific (Tokyo)',
+      id: 'ap-northeast-1',
+    },
+    {
+      name: 'Canada (Central)',
+      id: 'ca-central-1',
+    },
+    {
+      name: 'China (Beijing)',
+      id: 'cn-north-1',
+    },
+    {
+      name: 'China (Ningxia)',
+      id: 'cn-northwest-1',
+    },
+    {
+      name: 'Europe (Frankfurt)',
+      id: 'eu-central-1',
+    },
+    {
+      name: 'Europe (Ireland)',
+      id: 'eu-west-1',
+    },
+    {
+      name: 'Europe (London)',
+      id: 'eu-west-2',
+    },
+    {
+      name: 'Europe (Milan)',
+      id: 'eu-south-1',
+    },
+    {
+      name: 'Europe (Paris)',
+      id: 'eu-west-3',
+    },
+    {
+      name: 'Europe (Stockholm)',
+      id: 'eu-north-1',
+    },
+    {
+      name: 'South America (São Paulo)',
+      id: 'sa-east-1',
+    },
+    {
+      name: 'Middle East (Bahrain)',
+      id: 'me-south-1',
+    },
+    {
+      name: 'AWS GovCloud (US-East)',
+      id: 'us-gov-east-1',
+    },
+    {
+      name: 'AWS GovCloud (US-West)',
+      id: 'us-gov-west-1',
+    },
+  ];
+
+  return data;
+};
+
 const listBuckets = async () => {
   try {
     const data = await s3.listBuckets({}).promise();
 
-    return data.Buckets;
+    return data;
   } catch (err) {
     throw new Error(err);
   }
@@ -222,8 +333,12 @@ const bucketExists = async (Bucket) => {
 
     return true;
   } catch (err) {
-    if (err.statusCode === 404 || err.statusCode === 403) {
+    if (err.statusCode === 404) {
       return false;
+    }
+
+    if (err.statusCode === 403) {
+      return true;
     }
 
     throw new Error(err);
@@ -242,6 +357,9 @@ const createBucket = async (bucketToCreate) => {
 
     const options = {
       Bucket: bucketToCreate.name,
+      CreateBucketConfiguration: {
+        LocationConstraint: bucketToCreate.region ? bucketToCreate.region : 'sa-east-1',
+      },
     };
 
     const newBucket = await s3.createBucket(options).promise();
@@ -249,7 +367,7 @@ const createBucket = async (bucketToCreate) => {
     return newBucket;
   } catch (err) {
     if (err.statusCode === 409) {
-      const error = new Error('bucket name already exist');
+      const error = new Error('el bucket ya existe');
       error.status = 400;
       throw error;
     }
@@ -297,11 +415,6 @@ const editBucket = async (bucketName, access) => {
   await serializeBucketAcl(bucketName);
 
   try {
-    const bucketInfo = {
-      name: bucketName,
-      access,
-    };
-
     switch (access) {
       case 0:
         await editPublicAccessBlock(bucketName, false);
@@ -318,12 +431,12 @@ const editBucket = async (bucketName, access) => {
         await editPublicAccessBlock(bucketName, false);
 
         break;
-
       default:
+        await editPublicAccessBlock(bucketName, false);
+        await editBucketPolicy(bucketName, true);
+
         break;
     }
-
-    return bucketInfo;
   } catch (err) {
     throw new Error(err);
   }
@@ -364,6 +477,7 @@ const deleteBucket = async (Bucket) => {
 
 module.exports = {
   // BUCKETS METHODS
+  listRegions,
   listBuckets,
   getBucketAccess,
   createBucket,

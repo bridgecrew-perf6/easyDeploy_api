@@ -1,14 +1,21 @@
 const { check } = require('express-validator');
 const validateFields = require('./validateFields');
+const s3Service = require('../services/aws');
 const utils = require('../utils/customValidations');
 
-const validateCreation = [
+const info = [
   check('name', 'formato erroneo')
     .notEmpty()
     .bail()
     .isString()
     .bail()
     .custom((value) => {
+      for (let i = 0; i < value.length; i += 1) {
+        if (value.charAt(i).toUpperCase() === value.charAt(i)) {
+          throw new Error('los nombres no pueden contener mayusculas.');
+        }
+      }
+
       if (value.length < 3 || value.length > 63) {
         throw new Error('Los nombres deben tener entre 3 y 63 caracteres.');
       }
@@ -42,6 +49,23 @@ const validateCreation = [
   validateFields,
 ];
 
+const exist = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+
+    const result = await s3Service.bucketExists(bucketName);
+
+    if (result) {
+      next();
+    }
+
+    res.status(400).json({ status: 400, message: 'bucket no encontrado' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  validateCreation,
+  info,
+  exist,
 };

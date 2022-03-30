@@ -1,21 +1,46 @@
 const s3Service = require('../services/aws');
 
+const listRegions = (req, res) => {
+  const regions = s3Service.listRegions();
+
+  const response = {
+    status: 200,
+    success: true,
+    regions,
+  };
+
+  res.status(200).json(response);
+};
+
 const listBuckets = async (req, res, next) => {
   try {
-    const response = [];
-    const buckets = await s3Service.listBuckets();
+    let statusCode = 200;
+    const result = [];
+    const data = await s3Service.listBuckets();
 
-    for await (const bucket of buckets) {
+    for await (const bucket of data.Buckets) {
       const accessType = await s3Service.getBucketAccess(bucket.Name);
 
-      response.push({
+      result.push({
         name: bucket.Name,
         accessType,
         creationDate: bucket.CreationDate.toLocaleDateString(),
       });
     }
 
-    res.status(200).json(response);
+    if (result.length <= 0) {
+      statusCode = 204;
+    }
+
+    const response = {
+      status: statusCode,
+      success: true,
+      acount: data.Owner.DisplayName,
+      count: data.Buckets.length,
+      buckets: result,
+    };
+
+    res.status(statusCode).json(response);
   } catch (err) {
     next(err);
   }
@@ -24,9 +49,16 @@ const listBuckets = async (req, res, next) => {
 const createBucket = async (req, res, next) => {
   try {
     const bucketInformation = req.body;
-    const createdBucket = await s3Service.createBucket(bucketInformation);
+    const result = await s3Service.createBucket(bucketInformation);
 
-    res.status(201).json(createdBucket);
+    const response = {
+      status: 201,
+      success: true,
+      url: result.Location,
+      message: 'bucket creado con exito',
+    };
+
+    res.status(201).json(response);
   } catch (err) {
     next(err);
   }
@@ -47,8 +79,15 @@ const editBucket = async (req, res, next) => {
   try {
     const { name, access } = req.body;
 
-    const result = await s3Service.editBucket(name, access);
-    res.status(200).json(result);
+    await s3Service.editBucket(name, access);
+
+    const response = {
+      status: 200,
+      success: true,
+      message: 'bucket editado con exito',
+    };
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -74,6 +113,7 @@ const deleteBucket = async (req, res, next) => {
 };
 
 module.exports = {
+  listRegions,
   listBuckets,
   createBucket,
   editBucket,

@@ -27,11 +27,12 @@ app.use((req, res, next) => {
 // error handler
 app.use((err, req, res, next) => {
   const errorResponse = {
-    status: err.status || 500,
+    status: err.status || err.statusCode || 500,
+    success: false,
     message: err.message || 'internal server error',
   };
   // send the error
-  res.status(err.status || 500).json(errorResponse);
+  res.status(err.status || err.statusCode || 500).json(errorResponse);
 });
 
 module.exports = app;
