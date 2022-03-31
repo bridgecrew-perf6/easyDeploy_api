@@ -46,6 +46,26 @@ const info = [
   check('access', 'formato erroneo').notEmpty().bail()
     .isInt({ min: 0, max: 2 }),
 
+  check('region', 'formato erroneo').notEmpty().bail()
+    .isString()
+    .bail()
+    .custom((value) => {
+      let err = true;
+      const regions = s3Service.listRegions();
+
+      regions.forEach((region) => {
+        if (value === region.id) {
+          err = false;
+        }
+      });
+
+      if (err) {
+        throw new Error('region invalida');
+      }
+
+      return true;
+    }),
+
   validateFields,
 ];
 
