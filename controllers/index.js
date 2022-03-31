@@ -51,6 +51,8 @@ const createBucket = async (req, res, next) => {
     const bucketInformation = req.body;
     const result = await s3Service.createBucket(bucketInformation);
 
+    await s3Service.editBucket(bucketInformation.name, bucketInformation.access);
+
     const response = {
       status: 201,
       success: true,
