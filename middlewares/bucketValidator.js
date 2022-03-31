@@ -44,6 +44,8 @@ const info = [
     })
     .bail(),
   check('access', 'formato erroneo').notEmpty().bail()
+    .isString()
+    .bail()
     .isInt({ min: 0, max: 2 }),
 
   check('region', 'formato erroneo').notEmpty().bail()

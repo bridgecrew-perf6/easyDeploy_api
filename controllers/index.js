@@ -51,7 +51,9 @@ const createBucket = async (req, res, next) => {
     const bucketInformation = req.body;
     const result = await s3Service.createBucket(bucketInformation);
 
-    await s3Service.editBucket(bucketInformation.name, bucketInformation.access);
+    await s3Service.serializeBucketAcl(bucketInformation.name);
+    await s3Service.serializeCors(bucketInformation.name);
+    await s3Service.setBucketAccess(bucketInformation.name, bucketInformation.access);
 
     const response = {
       status: 201,
@@ -69,9 +71,41 @@ const createBucket = async (req, res, next) => {
 const listObjects = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
+    const { folder } = req.query;
+    const data = [];
 
-    const bucketObjects = await s3Service.listObjects(bucketName);
-    res.status(200).json(bucketObjects);
+    const result = await s3Service.listObjects(bucketName, folder);
+
+    result.Contents.forEach((file) => {
+      if (file.Size !== 0) {
+        data.push({
+          name: file.Key.split('/').pop(),
+          type: 'file',
+          size: file.Size,
+          LastModified: file.LastModified,
+        });
+      }
+    });
+
+    result.CommonPrefixes.forEach((common) => {
+      const path = common.Prefix.split('/');
+
+      data.push({
+        name: path[path.length - 2],
+        type: 'folder',
+        size: 0,
+        LastModified: '',
+      });
+    });
+
+    const response = {
+      status: 200,
+      success: true,
+      count: data.length,
+      data,
+    };
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -81,7 +115,9 @@ const editBucket = async (req, res, next) => {
   try {
     const { name, access } = req.body;
 
-    await s3Service.editBucket(name, access);
+    await s3Service.serializeBucketAcl(name);
+    await s3Service.serializeCors(name);
+    await s3Service.setBucketAccess(name, access);
 
     const response = {
       status: 200,
@@ -106,9 +142,15 @@ const uploadBucket = async (req, res, next) => {
 const deleteBucket = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
-    const result = await s3Service.deleteBucket(bucketName);
+    await s3Service.deleteBucket(bucketName);
 
-    res.status(200).json(result);
+    const response = {
+      status: 200,
+      success: true,
+      message: 'bucket eliminado con exito',
+    };
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }

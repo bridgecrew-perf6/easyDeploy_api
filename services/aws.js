@@ -149,10 +149,13 @@ const serializeBucketAcl = async (bucketName) => {
 
 // OBJECTS METHODS
 
-const listObjects = async (bucketName) => {
+const listObjects = async (bucketName, folder = '') => {
   try {
     const data = await s3.listObjectsV2({
       Bucket: bucketName,
+      Delimiter: '/',
+      Prefix: folder === '' ? '' : `${folder}/`,
+      MaxKeys: 2000,
     }).promise();
 
     return data;
@@ -204,9 +207,49 @@ const deleteObjects = async (Bucket) => {
 
 /* -------------------------------------------------------------------------------- */
 
+// CORS METHODS
+
+const serializeCors = async (Bucket) => {
+  try {
+    const options = {
+      Bucket,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedHeaders: [
+              '*',
+            ],
+            AllowedMethods: [
+              'GET',
+            ],
+            AllowedOrigins: [
+              '*',
+            ],
+            ExposeHeaders: [
+              'x-amz-server-side-encryption',
+              'x-amz-request-id',
+              'x-amz-id-2',
+            ],
+            MaxAgeSeconds: 3000,
+          },
+        ],
+      },
+      ContentMD5: '',
+    };
+
+    const result = await s3.putBucketCors(options).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+/* -------------------------------------------------------------------------------- */
+
 // BUCKET METHODS
 
-const listRegions = async () => {
+const listRegions = () => {
   const data = [
     {
       name: 'US East (Ohio)',
@@ -411,22 +454,20 @@ const getBucketAccess = async (bucketName) => {
   }
 };
 
-const editBucket = async (bucketName, access) => {
-  await serializeBucketAcl(bucketName);
-
+const setBucketAccess = async (bucketName, access) => {
   try {
     switch (access) {
-      case 0:
+      case '0':
         await editPublicAccessBlock(bucketName, false);
         await editBucketPolicy(bucketName, true);
 
         break;
-      case 1:
+      case '1':
         await editPublicAccessBlock(bucketName, true);
         await editBucketPolicy(bucketName, false);
 
         break;
-      case 2:
+      case '2':
         await deleteBucketPolicy(bucketName);
         await editPublicAccessBlock(bucketName, false);
 
@@ -481,7 +522,7 @@ module.exports = {
   listBuckets,
   getBucketAccess,
   createBucket,
-  editBucket,
+  setBucketAccess,
   uploadToBucket,
   deleteBucket,
   bucketExists,
@@ -496,7 +537,9 @@ module.exports = {
   // ACL METHODS
   getAclPolicy,
   serializeBucketAcl,
-  // PUBLIC ACCESS MEHODS
+  // PUBLIC ACCESS METHODS
   getPublicAccessBlock,
   editPublicAccessBlock,
+  // CORS METHODS
+  serializeCors,
 };

@@ -31,6 +31,11 @@ app.use((err, req, res, next) => {
     success: false,
     message: err.message || 'internal server error',
   };
+
+  if (req.app.get('env') === 'development') {
+    errorResponse.stack = err.stack;
+  }
+
   // send the error
   res.status(err.status || err.statusCode || 500).json(errorResponse);
 });
