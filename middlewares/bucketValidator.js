@@ -3,42 +3,48 @@ const validateFields = require('./validateFields');
 const s3Service = require('../services/aws');
 const utils = require('../utils/customValidations');
 
-const info = [
+const validateName = (name) => {
+  const letrasMayusculas = 'ABCDEFGHYJKLMNÑOPQRSTUVWXYZ';
+
+  for (let i = 0; i < name.length; i += 1) {
+    if (letrasMayusculas.indexOf(name.charAt(i), 0) !== -1) {
+      throw new Error('los nombres no pueden contener mayusculas.');
+    }
+  }
+
+  if (name.length < 3 || name.length > 63) {
+    throw new Error('Los nombres deben tener entre 3 y 63 caracteres.');
+  }
+
+  if (utils.isValidIP(name)) {
+    throw new Error('Los nombres no deben tener el formato de una dirección IP.');
+  }
+
+  if (name.startsWith('xn--', 0)) {
+    throw new Error('Los nombres no deben comenzar con el prefijo xn--.');
+  }
+
+  if (name.substring(name.search('-s3alias'), name.length) === '-s3alias') {
+    throw new Error('Los nombres no deben terminar con el sufijo -s3alias.');
+  }
+
+  if (!utils.isAlphaNumeric(name.charAt(0))) {
+    throw new Error('Los nombres deben comenzar y terminar con una letra o un número.');
+  }
+
+  if (!utils.isAlphaNumeric(name.charAt(name.length - 1))) {
+    throw new Error('Los nombres deben comenzar y terminar con una letra o un número.');
+  }
+};
+
+const validateInfo = [
   check('name', 'formato erroneo')
     .notEmpty()
     .bail()
     .isString()
     .bail()
     .custom((value) => {
-      for (let i = 0; i < value.length; i += 1) {
-        if (value.charAt(i).toUpperCase() === value.charAt(i)) {
-          throw new Error('los nombres no pueden contener mayusculas.');
-        }
-      }
-
-      if (value.length < 3 || value.length > 63) {
-        throw new Error('Los nombres deben tener entre 3 y 63 caracteres.');
-      }
-
-      if (utils.isValidIP(value)) {
-        throw new Error('Los nombres no deben tener el formato de una dirección IP.');
-      }
-
-      if (value.startsWith('xn--', 0)) {
-        throw new Error('Los nombres no deben comenzar con el prefijo xn--.');
-      }
-
-      if (value.substring(value.search('-s3alias'), value.length) === '-s3alias') {
-        throw new Error('Los nombres no deben terminar con el sufijo -s3alias.');
-      }
-
-      if (!utils.isAlphaNumeric(value.charAt(0))) {
-        throw new Error('Los nombres deben comenzar y terminar con una letra o un número.');
-      }
-
-      if (!utils.isAlphaNumeric(value.charAt(value.length - 1))) {
-        throw new Error('Los nombres deben comenzar y terminar con una letra o un número.');
-      }
+      validateName(value);
 
       return true;
     })
@@ -71,23 +77,32 @@ const info = [
   validateFields,
 ];
 
-const exist = async (req, res, next) => {
+const validateExist = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
 
+    validateName(bucketName);
+
     const result = await s3Service.bucketExists(bucketName);
 
-    if (result) {
-      next();
+    if (!result) {
+      const response = {
+        status: 400,
+        success: false,
+        message: 'bucket no encontrado',
+      };
+
+      return res.status(400).json(response);
     }
 
-    res.status(400).json({ status: 400, message: 'bucket no encontrado' });
+    return next();
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
 module.exports = {
-  info,
-  exist,
+  validateName,
+  validateInfo,
+  validateExist,
 };
