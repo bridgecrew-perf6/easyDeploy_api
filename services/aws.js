@@ -376,7 +376,7 @@ const bucketExists = async (Bucket) => {
 
     return true;
   } catch (err) {
-    if (err.statusCode === 404) {
+    if (err.statusCode === 404 || err.statusCode === 400) {
       return false;
     }
 
