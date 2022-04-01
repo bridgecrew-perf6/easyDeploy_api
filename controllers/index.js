@@ -18,15 +18,12 @@ const listBuckets = async (req, res, next) => {
     const result = [];
     const data = await s3Service.listBuckets();
 
-    for await (const bucket of data.Buckets) {
-      const accessType = await s3Service.getBucketAccess(bucket.Name);
-
+    data.Buckets.forEach((bucket) => {
       result.push({
         name: bucket.Name,
-        accessType,
         creationDate: bucket.CreationDate.toLocaleDateString(),
       });
-    }
+    });
 
     if (result.length <= 0) {
       statusCode = 204;
@@ -41,6 +38,27 @@ const listBuckets = async (req, res, next) => {
     };
 
     res.status(statusCode).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getAccess = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+
+    const access = await s3Service.getBucketAccess(bucketName);
+
+    const response = {
+      status: 200,
+      success: true,
+      data: {
+        bucket: bucketName,
+        access,
+      },
+    };
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -159,6 +177,7 @@ const deleteBucket = async (req, res, next) => {
 module.exports = {
   listRegions,
   listBuckets,
+  getAccess,
   createBucket,
   editBucket,
   listObjects,
