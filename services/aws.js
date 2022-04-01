@@ -401,11 +401,11 @@ const bucketExists = async (Bucket) => {
 
 const createBucket = async (bucketToCreate) => {
   try {
-    const exists = await bucketExists(bucketToCreate.name);
+    const result = await bucketExists(bucketToCreate.name);
 
-    if (exists) {
-      const error = new Error('el bucket ya existe');
-      error.status = 400;
+    if (result.exist || result.status === 403) {
+      const error = new Error(result.message);
+      error.status = result.status;
       throw error;
     }
 
