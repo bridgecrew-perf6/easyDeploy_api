@@ -85,14 +85,14 @@ const validateExist = async (req, res, next) => {
 
     const result = await s3Service.bucketExists(bucketName);
 
-    if (!result) {
+    if (!result.exist || result.status === 403) {
       const response = {
-        status: 400,
+        status: result.status,
         success: false,
-        message: 'bucket no encontrado',
+        message: result.message,
       };
 
-      return res.status(400).json(response);
+      return res.status(result.status).json(response);
     }
 
     return next();
