@@ -14,4 +14,7 @@ router.route('/:bucketName').all(middleware.validateExist)
   .put(middleware.validateInfo, controller.editBucket)
   .delete(controller.deleteBucket);
 
+router.route('/access/:bucketName').all(middleware.validateExist)
+  .get(controller.getAccess);
+
 module.exports = router;
