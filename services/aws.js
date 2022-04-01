@@ -371,17 +371,28 @@ const listBuckets = async () => {
 };
 
 const bucketExists = async (Bucket) => {
+  const result = {
+    exist: true,
+    status: 200,
+    message: 'el bucket existe',
+  };
+
   try {
     await s3.headBucket({ Bucket }).promise();
 
-    return true;
+    return result;
   } catch (err) {
     if (err.statusCode === 404 || err.statusCode === 400) {
-      return false;
+      result.status = err.statusCode;
+      result.exist = false;
+      result.message = 'el bucket no existe';
+      return result;
     }
 
     if (err.statusCode === 403) {
-      return true;
+      result.status = err.statusCode;
+      result.message = 'acceso denegado';
+      return result;
     }
 
     throw new Error(err);
