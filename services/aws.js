@@ -494,17 +494,16 @@ const setBucketAccess = async (bucketName, access) => {
   }
 };
 
-// recibe la ruta donde esta el archivo temporal del xml y lo sube al bucket
-const uploadToBucket = async (filePath) => {
+const uploadToBucket = async (Bucket, file) => {
   try {
-    const stream = fs.createReadStream(filePath);
+    const stream = fs.createReadStream(file.path);
 
     const params = {
-      Bucket: process.env.BUCKET,
-      Key: 'modelos.xml',
+      Bucket,
+      Key: file.filename,
       Body: stream,
-      ACL: 'public-read',
-      ContentType: 'txt/xml',
+      // ACL: 'public-read',
+      ContentType: file.mimetype,
       ContentDisposition: 'inline',
     };
 

@@ -149,9 +149,20 @@ const editBucket = async (req, res, next) => {
   }
 };
 
-const uploadBucket = async (req, res, next) => {
+const upload = async (req, res, next) => {
   try {
-    res.status(200).json({ message: 'exmple' });
+    const { bucketName } = req.params;
+    const file = req.files[0];
+    console.log(file);
+    const result = await s3Service.uploadToBucket(bucketName, file);
+
+    const response = {
+      status: 200,
+      success: true,
+      data: result,
+    };
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -181,6 +192,6 @@ module.exports = {
   createBucket,
   editBucket,
   listObjects,
-  uploadBucket,
+  upload,
   deleteBucket,
 };
