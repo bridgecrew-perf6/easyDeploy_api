@@ -3,10 +3,13 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const temp = require('./utils/temp');
 
 const indexRouter = require('./routes/index');
 
 const app = express();
+
+temp.exist();
 
 app.use(cors());
 app.use(logger('dev'));
