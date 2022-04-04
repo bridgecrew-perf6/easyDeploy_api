@@ -1,3 +1,4 @@
+const fs = require('fs');
 const s3Service = require('../services/aws');
 
 const listRegions = (req, res) => {
@@ -152,17 +153,19 @@ const editBucket = async (req, res, next) => {
 const upload = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
-    const file = req.files[0];
-    console.log(file);
-    const result = await s3Service.uploadToBucket(bucketName, file);
+    const { files } = req;
+    const result = await s3Service.uploadToBucket(bucketName, files[0]);
+    fs.unlink(`${files[0].path}`, (err) => {
+      if (err) throw err;
+    });
 
     const response = {
-      status: 200,
+      status: 201,
       success: true,
       data: result,
     };
 
-    res.status(200).json(response);
+    res.status(201).json(response);
   } catch (err) {
     next(err);
   }

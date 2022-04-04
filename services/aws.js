@@ -500,9 +500,8 @@ const uploadToBucket = async (Bucket, file) => {
 
     const params = {
       Bucket,
-      Key: file.filename,
+      Key: `${file.filename}`,
       Body: stream,
-      // ACL: 'public-read',
       ContentType: file.mimetype,
       ContentDisposition: 'inline',
     };
