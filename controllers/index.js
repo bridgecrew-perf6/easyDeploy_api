@@ -1,5 +1,6 @@
 const fs = require('fs');
 const s3Service = require('../services/aws');
+const parser = require('../utils/parser');
 
 const listRegions = (req, res) => {
   const regions = s3Service.listRegions();
@@ -93,27 +94,33 @@ const listObjects = async (req, res, next) => {
     const { folder } = req.query;
     const data = [];
 
-    const result = await s3Service.listObjects(bucketName, folder);
+    const result = await s3Service.listObjects(bucketName, folder, true);
+
+    const path = result.Prefix.split('/');
+    const prev = path.length < 3 ? '' : result.Prefix.replace(`${path[path.length - 2]}/`, '');
 
     result.Contents.forEach((file) => {
       if (file.Size !== 0) {
         data.push({
           name: file.Key.split('/').pop(),
           type: 'file',
-          size: file.Size,
-          LastModified: file.LastModified,
+          size: parser.formatBytes(file.Size),
+          LastModified: file.LastModified.toLocaleDateString(),
+          path: file.Key,
+          link: `https://${bucketName}.s3.amazonaws.com/${file.Key}`,
         });
       }
     });
 
     result.CommonPrefixes.forEach((common) => {
-      const path = common.Prefix.split('/');
+      const folderPath = common.Prefix.split('/');
 
       data.push({
-        name: path[path.length - 2],
+        name: folderPath[folderPath.length - 2],
         type: 'folder',
         size: 0,
         LastModified: '',
+        path: common.Prefix,
       });
     });
 
@@ -121,6 +128,7 @@ const listObjects = async (req, res, next) => {
       status: 200,
       success: true,
       count: data.length,
+      prev,
       data,
     };
 

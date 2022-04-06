@@ -149,12 +149,12 @@ const serializeBucketAcl = async (bucketName) => {
 
 // OBJECTS METHODS
 
-const listObjects = async (bucketName, folder = '') => {
+const listObjects = async (bucketName, folder = '', limit = false) => {
   try {
     const data = await s3.listObjectsV2({
       Bucket: bucketName,
-      Delimiter: '/',
-      Prefix: folder === '' ? '' : `${folder}/`,
+      Delimiter: limit ? '/' : '',
+      Prefix: folder,
       MaxKeys: 2000,
     }).promise();
 
