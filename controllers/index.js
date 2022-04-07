@@ -8,6 +8,7 @@ const listRegions = (req, res) => {
   const response = {
     status: 200,
     success: true,
+    count: regions.length,
     regions,
   };
 
@@ -57,6 +58,36 @@ const getAccess = async (req, res, next) => {
       data: {
         bucket: bucketName,
         access,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getRegion = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+    const bucketRegion = {};
+
+    const allRegions = s3Service.listRegions();
+    const result = await s3Service.getBucketRegion(bucketName);
+
+    allRegions.forEach((region) => {
+      if (region.id === result.LocationConstraint || result.LocationConstraint === null) {
+        bucketRegion.name = region.name;
+        bucketRegion.id = region.id;
+      }
+    });
+
+    const response = {
+      status: 200,
+      success: true,
+      data: {
+        bucket: bucketName,
+        region: bucketRegion,
       },
     };
 
@@ -199,6 +230,7 @@ const deleteBucket = async (req, res, next) => {
 module.exports = {
   listRegions,
   listBuckets,
+  getRegion,
   getAccess,
   createBucket,
   editBucket,

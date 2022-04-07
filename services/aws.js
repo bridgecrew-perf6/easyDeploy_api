@@ -347,14 +347,6 @@ const listRegions = () => {
       name: 'Middle East (Bahrain)',
       id: 'me-south-1',
     },
-    {
-      name: 'AWS GovCloud (US-East)',
-      id: 'us-gov-east-1',
-    },
-    {
-      name: 'AWS GovCloud (US-West)',
-      id: 'us-gov-west-1',
-    },
   ];
 
   return data;
@@ -363,7 +355,6 @@ const listRegions = () => {
 const listBuckets = async () => {
   try {
     const data = await s3.listBuckets({}).promise();
-
     return data;
   } catch (err) {
     throw new Error(err);
@@ -427,6 +418,16 @@ const createBucket = async (bucketToCreate) => {
     }
 
     throw err;
+  }
+};
+
+const getBucketRegion = async (Bucket) => {
+  try {
+    const result = await s3.getBucketLocation({ Bucket }).promise();
+
+    return result;
+  } catch (err) {
+    throw new Error(err);
   }
 };
 
@@ -526,9 +527,11 @@ const deleteBucket = async (Bucket) => {
 /* -------------------------------------------------------------------------------- */
 
 module.exports = {
-  // BUCKETS METHODS
+  // GENERAL METHODS
   listRegions,
   listBuckets,
+  // BUCKETS METHODS
+  getBucketRegion,
   getBucketAccess,
   createBucket,
   setBucketAccess,

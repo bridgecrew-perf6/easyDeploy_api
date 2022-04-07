@@ -38,7 +38,7 @@ const validateName = (name) => {
 };
 
 const validateInfo = [
-  check('name', 'formato erroneo')
+  check('name', 'nombre invalido')
     .notEmpty()
     .bail()
     .isString()
@@ -49,12 +49,12 @@ const validateInfo = [
       return true;
     })
     .bail(),
-  check('access', 'formato erroneo').notEmpty().bail()
+  check('access', 'acceso invalido').notEmpty().bail()
     .isString()
     .bail()
     .isInt({ min: 0, max: 2 }),
 
-  check('region', 'formato erroneo').notEmpty().bail()
+  check('region', 'region invalida').notEmpty().bail()
     .isString()
     .bail()
     .custom((value) => {

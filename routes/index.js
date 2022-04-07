@@ -8,6 +8,7 @@ router.route('/')
   .post(middleware.validateInfo, controller.createBucket);
 
 router.get('/regions', controller.listRegions);
+router.get('/regions/:bucketName', middleware.validateExist, controller.getRegion);
 
 router.route('/:bucketName').all(middleware.validateExist)
   .get(controller.listObjects)
