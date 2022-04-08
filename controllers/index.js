@@ -171,11 +171,12 @@ const listObjects = async (req, res, next) => {
 
 const editBucket = async (req, res, next) => {
   try {
-    const { name, access } = req.body;
+    const { access } = req.body;
+    const { bucketName } = req.params;
 
-    await s3Service.serializeBucketAcl(name);
-    await s3Service.serializeCors(name);
-    await s3Service.setBucketAccess(name, access);
+    await s3Service.serializeBucketAcl(bucketName);
+    await s3Service.serializeCors(bucketName);
+    await s3Service.setBucketAccess(bucketName, access);
 
     const response = {
       status: 200,

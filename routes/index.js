@@ -13,7 +13,7 @@ router.get('/regions/:bucketName', middleware.validateExist, controller.getRegio
 router.route('/:bucketName').all(middleware.validateExist)
   .get(controller.listObjects)
   .post(upload.any(), controller.upload)
-  .put(middleware.validateInfo, controller.editBucket)
+  .put(middleware.validateAccess, controller.editBucket)
   .delete(controller.deleteBucket);
 
 router.route('/access/:bucketName').all(middleware.validateExist)

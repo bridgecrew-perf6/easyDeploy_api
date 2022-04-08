@@ -38,7 +38,7 @@ const validateName = (name) => {
 };
 
 const validateInfo = [
-  check('name', 'nombre invalido')
+  check('name', 'el nombre es invalido')
     .notEmpty()
     .bail()
     .isString()
@@ -49,12 +49,12 @@ const validateInfo = [
       return true;
     })
     .bail(),
-  check('access', 'acceso invalido').notEmpty().bail()
+  check('access', 'el tipo de acceso es invalido').notEmpty().bail()
     .isString()
     .bail()
     .isInt({ min: 0, max: 2 }),
 
-  check('region', 'region invalida').notEmpty().bail()
+  check('region', 'la region es invalida').notEmpty().bail()
     .isString()
     .bail()
     .custom((value) => {
@@ -68,11 +68,20 @@ const validateInfo = [
       });
 
       if (err) {
-        throw new Error('region invalida');
+        throw new Error('la region es invalida');
       }
 
       return true;
     }),
+
+  validateFields,
+];
+
+const validateAccess = [
+  check('access', 'el tipo de acceso es invalido').notEmpty().bail()
+    .isString()
+    .bail()
+    .isInt({ min: 0, max: 2 }),
 
   validateFields,
 ];
@@ -104,5 +113,6 @@ const validateExist = async (req, res, next) => {
 module.exports = {
   validateName,
   validateInfo,
+  validateAccess,
   validateExist,
 };

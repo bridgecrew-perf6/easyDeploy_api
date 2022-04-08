@@ -178,21 +178,16 @@ const getObject = async (bucketName) => {
   }
 };
 
-const deleteObjects = async (Bucket) => {
+const deleteObjects = async (Bucket, objects) => {
   try {
-    const objectsToDelete = [];
-    const allObjets = await listObjects(Bucket);
-
-    allObjets.Contents.forEach((object) => {
-      objectsToDelete.push({
-        Key: object.Key,
-      });
-    });
+    if (objects.length < 1) {
+      return true;
+    }
 
     const options = {
       Bucket,
       Delete: {
-        Objects: objectsToDelete,
+        Objects: objects,
         Quiet: false,
       },
     };
@@ -365,7 +360,7 @@ const bucketExists = async (Bucket) => {
   const result = {
     exist: true,
     status: 200,
-    message: 'el bucket existe',
+    message: 'el bucket ya existe',
   };
 
   try {
@@ -382,7 +377,7 @@ const bucketExists = async (Bucket) => {
 
     if (err.statusCode === 403) {
       result.status = err.statusCode;
-      result.message = 'acceso denegado';
+      result.message = 'el bucket ya existe en AWS s3';
       return result;
     }
 
@@ -396,7 +391,7 @@ const createBucket = async (bucketToCreate) => {
 
     if (result.exist || result.status === 403) {
       const error = new Error(result.message);
-      error.status = result.status;
+      error.status = 400;
       throw error;
     }
 
@@ -515,10 +510,22 @@ const uploadToBucket = async (Bucket, file) => {
 
 const deleteBucket = async (Bucket) => {
   try {
-    await deleteObjects(Bucket);
+    const folder = '';
+    const limit = false;
+    const allObjets = await listObjects(Bucket, folder, limit);
+    const objectsToDelete = [];
+
+    allObjets.Contents.forEach((object) => {
+      objectsToDelete.push({
+        Key: object.Key,
+      });
+    });
+
+    const deletedObjects = await deleteObjects(Bucket, objectsToDelete);
+
     const result = await s3.deleteBucket({ Bucket }).promise();
 
-    return result;
+    return { deletedObjects, result };
   } catch (err) {
     throw new Error(err);
   }
