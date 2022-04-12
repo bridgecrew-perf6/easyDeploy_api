@@ -490,6 +490,24 @@ const setBucketAccess = async (bucketName, access) => {
   }
 };
 
+const signedUrl = async (Bucket, file) => {
+  try {
+    const options = {
+      Bucket,
+      Fields: {
+        key: file.name,
+      },
+      // Expires: 30,
+    };
+
+    const response = await s3.createPresignedPost(options);
+
+    return response;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
 const uploadToBucket = async (Bucket, file) => {
   try {
     const stream = fs.createReadStream(file.path);
@@ -542,6 +560,7 @@ module.exports = {
   getBucketAccess,
   createBucket,
   setBucketAccess,
+  signedUrl,
   uploadToBucket,
   deleteBucket,
   bucketExists,

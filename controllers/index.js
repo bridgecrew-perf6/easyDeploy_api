@@ -190,6 +190,25 @@ const editBucket = async (req, res, next) => {
   }
 };
 
+const getSignedUrl = async (req, res, next) => {
+  try {
+    const { bucketName } = req.params;
+    const fileToUpload = req.body;
+
+    const data = await s3Service.signedUrl(bucketName, fileToUpload);
+
+    const response = {
+      status: 200,
+      success: true,
+      data,
+    };
+
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const upload = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
@@ -236,6 +255,7 @@ module.exports = {
   createBucket,
   editBucket,
   listObjects,
+  getSignedUrl,
   upload,
   deleteBucket,
 };

@@ -10,6 +10,8 @@ router.route('/')
 router.get('/regions', controller.listRegions);
 router.get('/regions/:bucketName', middleware.validateExist, controller.getRegion);
 
+router.post('/signendUrl/:bucketName', middleware.validateExist, controller.getSignedUrl);
+
 router.route('/:bucketName').all(middleware.validateExist)
   .get(controller.listObjects)
   .post(upload.any(), controller.upload)
