@@ -490,12 +490,12 @@ const setBucketAccess = async (bucketName, access) => {
   }
 };
 
-const signedUrl = async (Bucket, file) => {
+const signedUrl = async (Bucket, fileName) => {
   try {
     const options = {
       Bucket,
       Fields: {
-        key: file.name,
+        key: fileName,
       },
       // Expires: 30,
     };

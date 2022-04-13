@@ -193,9 +193,9 @@ const editBucket = async (req, res, next) => {
 const getSignedUrl = async (req, res, next) => {
   try {
     const { bucketName } = req.params;
-    const fileToUpload = req.body;
+    const { fileName } = req.body;
 
-    const data = await s3Service.signedUrl(bucketName, fileToUpload);
+    const data = await s3Service.signedUrl(bucketName, fileName);
 
     const response = {
       status: 200,
